@@ -1,0 +1,690 @@
+{
+  "info": {
+    "_postman_id": "c5475b1a-58ff-4b89-9d78-157e35e62e37",
+    "name": "qa-task",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "41945472"
+  },
+  "item": [
+    {
+      "name": "NEGATIVE TEST",
+      "item": [
+        {
+          "name": "TC-007 Invalid Data Post",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const randomId = Math.floor(Math.random() * 1000);\r",
+                  "\r",
+                  "pm.variables.set('randomTitle', 'Post Title ' + randomId);\r",
+                  "pm.variables.set('randomBody', 'Post Body ' + randomId);\r",
+                  "\r",
+                  "console.log(`Creating title: ${pm.variables.get('randomTitle')}`);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code should not be 200 ', function() {\r",
+                  "    pm.response.to.have.status(404); \r",
+                  "});\r",
+                  "\r",
+                  "pm.test('Response should be empty object or error message', function() {\r",
+                  "    const data = pm.response.json();\r",
+                  "\r",
+                  "    if(Object.keys(data).length === 0) {\r",
+                  "        pm.expect(data).to.be.empty\r",
+                  "    } else {\r",
+                  "        pm.expect(data).to.have.property('error');\r",
+                  "    }\r",
+                  "    \r",
+                  "});\r",
+                  "\r",
+                  "\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/posts/{{invalidPostId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "posts",
+                "{{invalidPostId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-008 Empty body",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is not should be 201', function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "})\r",
+                  "\r",
+                  "pm.test('Response shoul be error', function() {\r",
+                  "    pm.expect(pm.response.json()).to.have.property('error');\r",
+                  "})\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/posts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "posts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-009 Invalid body type",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is not should be 201', function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "})\r",
+                  "\r",
+                  "pm.test('Response shoul be error', function() {\r",
+                  "    pm.expect(pm.response.json()).to.have.property('error');\r",
+                  "})\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is not should be 201', function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "})\r",
+                  "\r",
+                  "pm.test('Response shoul be error', function() {\r",
+                  "    pm.expect(pm.response.json()).to.have.property('error');\r",
+                  "})\r",
+                  "\r",
+                  "pm.test(\"Error message valid\", () => {\r",
+                  "    const res = pm.response.json();\r",
+                  "    pm.expect(res).to.not.be.empty;\r",
+                  "});\r",
+                  "\r",
+                  "pm.test('Status code should be 400', function() {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "})"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"body\": 1,\r\n    \"title\": true,\r\n    \"id\": \"STRING\",\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/posts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "posts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-010 Update",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('createPostId', 100)"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is must be 500\", function () {\r",
+                  "    pm.response.to.have.status(500)\r",
+                  "})\r",
+                  "\r",
+                  "pm.test(\"Response body must contain error message\", function () {\r",
+                  "    pm.expect(pm.response.text()).to.include(\"TypeError\")\r",
+                  "})\r",
+                  "\r",
+                  "pm.test(\"Response body must contain 'Cannot read properties of undefined'\", function () {\r",
+                  "    pm.expect(pm.response.text()).to.include(\"Cannot read properties of undefined\")\r",
+                  "} )"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"id\" : \"{{PostId}}\",\r\n    \"title\": \"updated title\",\r\n    \"body\": \"updated body content\",\r\n    \"userId\": 1\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/posts/{{invalidPostId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "posts",
+                "{{invalidPostId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "POSITIVE TEST",
+      "item": [
+        {
+          "name": "POSTS",
+          "item": [
+            {
+              "name": "TC-004 POSTS",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "const randomId = Math.floor(Math.random() * 1000);\r",
+                      "\r",
+                      "pm.variables.set('randomTitle', 'Post Title ' + randomId);\r",
+                      "pm.variables.set('randomBody', 'Post Body ' + randomId);\r",
+                      "\r",
+                      "console.log(`Creating title: ${pm.variables.get('randomTitle')}`);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 201', function() {\r",
+                      "    pm.response.to.have.status(201)\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Respones has correct data structure', function() {\r",
+                      "    const data = pm.response.json()\r",
+                      "\r",
+                      "    pm.expect(data).to.have.property('title')\r",
+                      "    pm.expect(data).to.have.property('body')\r",
+                      "    pm.expect(data).to.have.property('userId')\r",
+                      "    pm.expect(data).to.have.property('id')\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Response title is correct', function () {\r",
+                      "    const data = pm.response.json()\r",
+                      "    pm.expect(data.title).to.eql(pm.variables.get('randomTitle'))\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Respones body is correct', function() {\r",
+                      "    const data = pm.response.json()\r",
+                      "    pm.expect(data.body).to.eql(pm.variables.get('randomBody'))\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('ID shoudl be a number', function() {\r",
+                      "    const data = pm.response.json()\r",
+                      "    pm.expect(data.id).to.be.a('number')\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Save post id', function() {\r",
+                      "    const data = pm.response.json()\r",
+                      "    pm.environment.set('createPostId', data.id)\r",
+                      "})\r",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"title\": \"{{randomTitle}}\",\r\n    \"body\": \"{{randomBody}}\",\r\n    \"userId\": 1\r\n\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/posts",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "posts"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-005 PUT",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.environment.set('createPostId', 100)"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {\r",
+                      "    pm.response.to.have.status(200)\r",
+                      "})\r",
+                      "\r",
+                      "pm.test(\"Data successfully updated\", function() {\r",
+                      "    const data = pm.response.json()\r",
+                      "    pm.expect(data.title).to.eql('updated title')\r",
+                      "    pm.expect(data.body).to.eql('updated body content')\r",
+                      "    pm.expect(data.id).to.eql(parseInt(pm.environment.get(\"createPostId\")))\r",
+                      "})\r",
+                      "\r",
+                      "pm.test(\"All fields remain intact\", function() {\r",
+                      "    const data = pm.response.json();\r",
+                      "\r",
+                      "    pm.expect(data).to.have.all.keys('id', 'title', 'body', 'userId')\r",
+                      "})"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"id\" : \"{{PostId}}\",\r\n    \"title\": \"updated title\",\r\n    \"body\": \"updated body content\",\r\n    \"userId\": 1\r\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/posts/{{createPostId}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "posts",
+                    "{{createPostId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-001 POSTS",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {\r",
+                      "     pm.response.to.have.status(200)\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Response should be an array', function () {\r",
+                      "    const data = pm.response.json()\r",
+                      "    pm.expect(data).to.be.an('array')\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Should return 100 array', function() {\r",
+                      "    const data = pm.response.json();\r",
+                      "    pm.expect(data.length).to.equal(100)\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Validate First ID ', function () {\r",
+                      "    const data = pm.response.json();\r",
+                      "    pm.expect(data[0].id).to.equal(1)\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Each post must have requeired properties', function() {\r",
+                      "    const data = pm.response.json()\r",
+                      "    data.forEach(post => {\r",
+                      "        pm.expect(post).to.have.property('userId')\r",
+                      "        pm.expect(post).to.have.property('id')\r",
+                      "        pm.expect(post).to.have.property('title')\r",
+                      "        pm.expect(post).to.have.property('body')\r",
+                      "    })\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Title post should be string', function () {\r",
+                      "    const data = pm.response.json();\r",
+                      "    data.forEach(title => {\r",
+                      "        pm.expect(title.title).to.be.a('string')\r",
+                      "    })\r",
+                      "})\r",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/posts",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "posts"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-006 DELETE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {\r",
+                      "    pm.response.to.have.status(200)\r",
+                      "})\r",
+                      "\r",
+                      ""
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/posts/{{createPostId}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "posts",
+                    "{{createPostId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-003 SINGLE COMMENTS",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {\r",
+                      "    pm.response.to.have.status(200)\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Response should be an array', function () {\r",
+                      "    var data = pm.response.json()\r",
+                      "    pm.expect(data).to.be.an('array')\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Respones should have 5 post', function () {\r",
+                      "    var data = pm.response.json()\r",
+                      "    pm.expect(data.length).to.eql(5)\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Respones has correct ID', function () {\r",
+                      "    var data = pm.response.json()\r",
+                      "\r",
+                      "    for(let i = 0; i < data.length; i++) {\r",
+                      "        pm.expect(data[i].postId).to.eql(parseInt(pm.variables.get('post_id')))\r",
+                      "    }\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Response body has all requeired fields', function () {\r",
+                      "    var body = pm.response.json()\r",
+                      "   \r",
+                      "     for(let i = 0; i < data.length; i++) {\r",
+                      "        pm.expect(body[i].userId).to.be.a('number')\r",
+                      "        pm.expect(body[i].id).to.be.a('number')\r",
+                      "        pm.expect(body[i].title).to.be.a('string')\r",
+                      "        pm.expect(body[i].body).to.be.a('string')\r",
+                      "     }\r",
+                      "        \r",
+                      "\r",
+                      "})"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/posts/{{post_id}}/comments",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "posts",
+                    "{{post_id}}",
+                    "comments"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-002 SINGLE POSTS",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {\r",
+                      "    pm.response.to.have.status(200)\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Respones has correct ID', function () {\r",
+                      "    var data = pm.response.json()\r",
+                      "    pm.expect(data.id).to.eql(parseInt(pm.variables.get('post_id')))\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Response body has all requeired fields', function () {\r",
+                      "    var body = pm.response.json()\r",
+                      "   \r",
+                      "        pm.expect(body.userId).to.be.a('number')\r",
+                      "        pm.expect(body.id).to.be.a('number')\r",
+                      "        pm.expect(body.title).to.be.a('string')\r",
+                      "        pm.expect(body.body).to.be.a('string')\r",
+                      "\r",
+                      "})\r",
+                      "\r",
+                      "pm.test('Save post title to variable', function ()  {\r",
+                      "    const data = pm.response.json()\r",
+                      "    pm.environment.set('SavedPostTilte', data.title)\r",
+                      "})"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/posts/{{post_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "posts",
+                    "{{post_id}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

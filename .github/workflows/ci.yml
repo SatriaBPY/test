@@ -1,0 +1,132 @@
+name: QA Automation Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # ==================================
+  # WEB - Playwright
+  # ==================================
+  web-test:
+    name: Web Automation
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./web-testing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: npm install
+      - run: npx playwright install --with-deps
+      - run: npm run test
+
+      - name: Upload Web Allure Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-allure-results
+          path: web-testing/allure-results
+          if-no-files-found: ignore
+
+  # ==================================
+  # API - Newman
+  # ==================================
+  api-test:
+    name: API Automation
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./api-testing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: npm install
+      - run: npm run start
+
+      - name: Upload API Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-html-report
+          path: api-testing/reporter
+          if-no-files-found: ignore
+
+  # ==================================
+  # MOBILE - WDIO + EMULATOR
+  # ==================================
+  mobile-test:
+    name: Mobile Automation
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./mobile-testing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: npm install
+
+      # Android SDK
+      - uses: android-actions/setup-android@v3
+
+      - name: Accept Licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Install Android Image
+        run: |
+          sdkmanager "system-images;android-30;google_apis;x86_64"
+          sdkmanager "platform-tools"
+          sdkmanager "emulator"
+
+      - name: Create Emulator
+        run: |
+          echo "no" | avdmanager create avd \
+            -n test \
+            -k "system-images;android-30;google_apis;x86_64" \
+            --force
+
+      - name: Start Emulator
+        run: |
+          nohup emulator -avd test -no-window -no-audio -no-boot-anim &
+          adb wait-for-device
+          sleep 30
+
+      - name: Install Appium
+        run: npm install -g appium
+
+      - name: Install UiAutomator2 Driver
+        run: appium driver install uiautomator2
+
+      - name: Run WDIO Tests
+        run: npm run wdio
+
+      - name: Upload Mobile Allure
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-allure-results
+          path: mobile-testing/allure-results
+          if-no-files-found: ignore
+
+      - name: Upload Mobile Video
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-video
+          path: mobile-testing/reports/video
+          if-no-files-found: ignore

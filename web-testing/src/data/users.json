@@ -1,0 +1,14 @@
+{
+  "admin": {
+    "id": 1,
+    "username": "Bret",
+    "email": "Sincere@april.biz",
+    "role": "admin"
+  },
+  "user": {
+    "id": 2,
+    "username": "Antonette",
+    "email": "Shanna@melissa.tv",
+    "role": "user"
+  }
+}
