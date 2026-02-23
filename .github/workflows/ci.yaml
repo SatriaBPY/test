@@ -87,160 +87,147 @@ jobs:
   # MOBILE - WDIO + EMULATOR
   # ==================================
   mobile-test: 
-    
-      name: Run Android Tests on Emulator
-      runs-on: ubuntu-latest
-      outputs:
-        test_status: ${{ steps.run_tests.outcome }}
-  
-      steps:
-        
-        - name: Enable KVM
-          run: |
-            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-            sudo udevadm control --reload-rules
-            sudo udevadm trigger --name-match=kvm
-            echo "✅ KVM enabled"
-            ls -la /dev/kvm
-  
-        
-        - name: Checkout project
-          uses: actions/checkout@v4
-  
-        
-        - name: Set up JDK 17
-          uses: actions/setup-java@v3
-          with:
-            distribution: 'temurin'
-            java-version: '17'
-            cache: maven
-  
-        
-        - name: Cache Maven dependencies
-          uses: actions/cache@v3
-          with:
-            path: ~/.m2
-            key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-            restore-keys: |
-              ${{ runner.os }}-m2
-  
-        
-        - name: Build with Maven
-          run: mvn clean install -DskipTests
-  
-        
-        - name: Download APK from WebdriverIO
-          run: |
-            mkdir -p apk
-            echo "📥 Downloading APK from ${{ env.APK_URL }}"
-            curl -L -o ${{ env.APK_PATH }} ${{ env.APK_URL }}
-            echo "✅ APK downloaded to ${{ env.APK_PATH }}"
-            ls -la apk/
-  
-        
-        - name: Setup Appium
-          run: |
-            # Install Appium globally
-            npm install -g appium@latest
+          name: Run Android Tests on Emulator
+          runs-on: ubuntu-latest
+          outputs:
+            test_status: ${{ steps.run_tests.outcome }}
+      
+          steps:
             
-            # Install UiAutomator2 driver
-            appium driver install uiautomator2
+            - name: Enable KVM
+              run: |
+                echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+                sudo udevadm control --reload-rules
+                sudo udevadm trigger --name-match=kvm
+      
             
-            # Verifikasi instalasi
-            appium --version
-            appium driver list --installed
-  
-        
-        - name: Start Appium Server
-          run: |
-            # Start Appium di background
-            appium --log-level debug --log appium.log &
+            - name: Checkout project
+              uses: actions/checkout@v4
+      
             
-            # Tunggu Appium siap
-            sleep 5
-            echo "✅ Appium server started"
+            - name: Set up JDK 17
+              uses: actions/setup-java@v3
+              with:
+                distribution: 'temurin'
+                java-version: '17'
+                
+      
             
-            # Tampilkan log untuk debugging
-            tail -n 20 appium.log || true
-  
-        
-        - name: Run tests on Android emulator
-          id: run_tests
-          uses: reactivecircus/android-emulator-runner@v2
-          with:
-            api-level: ${{ env.ANDROID_API_LEVEL }}
-            target: ${{ env.ANDROID_TARGET }}
-            arch: ${{ env.ANDROID_ARCH }}
-            profile: ${{ env.ANDROID_PROFILE }}
-            emulator-options: -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -no-accel
-            disable-animations: true
-            working-directory: ./
-            script: |
-              echo "🚀 Emulator is starting..."
-              
-              # Tunggu emulator benar-benar siap
-              adb wait-for-device
-              adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
-              echo "✅ Emulator boot completed"
-              
-              # Disable animations
-              adb shell settings put global window_animation_scale 0
-              adb shell settings put global transition_animation_scale 0
-              adb shell settings put global animator_duration_scale 0
-              
-              # Install APK yang sudah didownload
-              echo "📲 Installing APK..."
-              adb install ${{ env.APK_PATH }}
-              echo "✅ APK installed"
-              
-              # Verifikasi APK terinstall
-              adb shell pm list packages | grep wdio
-              
-              # Jalankan test dengan Maven
-              echo "🧪 Running tests..."
-              mvn test -Dsurefire.suiteXmlFiles=src/test/resources/testng-local.xml || true
-              
-              # Tampilkan hasil test
-              echo "📊 Test results:"
-              ls -la target/allure-results/ || echo "No allure-results yet"
-              
-              # Matikan emulator
-              adb emu kill || true
-              echo "✅ Emulator stopped"
-  
-        
-        - name: Upload Appium logs
-          if: always()
-          uses: actions/upload-artifact@v4
-          with:
-            name: appium-logs
-            path: appium.log
-            if-no-files-found: ignore
-  
-        
-        - name: Upload Allure Results
-          if: always()
-          uses: actions/upload-artifact@v4
-          with:
-            name: ${{ env.ARTIFACT_NAME_REMOTE }}
-            path: |
-              target/allure-results
-              target/surefire-reports
-            if-no-files-found: warn
-  
-        
-        - name: Test Status Summary
-          if: always()
-          run: |
-            echo "## 📱 Android Test Results" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '18'
+                cache: 'npm'
+                cache-dependency-path: ./mobile-testing/package-lock.json
+      
             
-            if [[ "${{ steps.run_tests.outcome }}" == "success" ]]; then
-              echo "✅ **All tests passed!**" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "⚠️ **Some tests failed**" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "Check the uploaded artifacts for details:" >> $GITHUB_STEP_SUMMARY
-              echo "- [Allure Results](${{ env.ARTIFACT_NAME_REMOTE }})" >> $GITHUB_STEP_SUMMARY
-              echo "- [Appium Logs](appium-logs)" >> $GITHUB_STEP_SUMMARY
-            fi
+            - name: Install dependencies
+              working-directory: ./mobile-testing
+              run: |
+                npm ci
+                npm install -g appium@next
+      
+            
+            - name: Download APK
+              working-directory: ./mobile-testing
+              run: |
+                mkdir -p apk
+                echo "📥 Downloading APK from ${{ env.APK_URL }}"
+                curl -L -o ${{ env.APK_PATH }} ${{ env.APK_URL }}
+                echo "✅ APK downloaded to ${{ env.APK_PATH }}"
+                ls -la apk/
+      
+            
+            - name: Setup Appium drivers
+              working-directory: ./mobile-testing
+              run: |
+                appium driver install uiautomator2
+                appium driver list --installed
+      
+            
+            - name: Build TypeScript
+              working-directory: ./mobile-testing
+              run: npm run build || echo "No build script, skipping"
+      
+            
+            - name: Run tests on Android emulator
+              id: run_tests
+              uses: reactivecircus/android-emulator-runner@v2
+              with:
+                api-level: ${{ env.ANDROID_API_LEVEL }}
+                target: ${{ env.ANDROID_TARGET }}
+                arch: ${{ env.ANDROID_ARCH }}
+                profile: ${{ env.ANDROID_PROFILE }}
+                emulator-options: -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -no-accel
+                disable-animations: true
+                working-directory: ./mobile-testing
+                script: |
+                  echo "🚀 Emulator is starting..."
+                  
+                  # Tunggu emulator boot
+                  adb wait-for-device
+                  adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
+                  echo "✅ Emulator boot completed"
+                  
+                  # Disable animations
+                  adb shell settings put global window_animation_scale 0
+                  adb shell settings put global transition_animation_scale 0
+                  adb shell settings put global animator_duration_scale 0
+                  
+                  # Install APK
+                  echo "📲 Installing APK..."
+                  adb install ${{ env.APK_PATH }}
+                  echo "✅ APK installed"
+                  
+                  # Verifikasi APK
+                  adb shell pm list packages | grep wdio
+                  
+                  # Start Appium
+                  echo "🚀 Starting Appium server..."
+                  npx appium --log-level debug --log appium.log &
+                  sleep 10
+                  
+                  
+                  echo "🧪 Running WebdriverIO tests..."
+                  npm run wdio || true
+                  
+                  # Matikan emulator
+                  adb emu kill || true
+                  echo "✅ Emulator stopped"
+      
+            
+            - name: Upload Appium logs
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                name: appium-logs
+                path: ./mobile-testing/appium.log
+                if-no-files-found: ignore
+      
+            
+            - name: Upload Allure Results
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                name: ${{ env.ARTIFACT_NAME_REMOTE }}
+                path: |
+                  ./mobile-testing/allure-results
+                  ./mobile-testing/test-results
+                if-no-files-found: ignore
+      
+            
+            - name: Test Status Summary
+              if: always()
+              run: |
+                echo "## 📱 Android Test Results" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                
+                if [[ "${{ steps.run_tests.outcome }}" == "success" ]]; then
+                  echo "✅ **All tests passed!**" >> $GITHUB_STEP_SUMMARY
+                else
+                  echo "⚠️ **Some tests failed**" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "📊 Check the artifacts:" >> $GITHUB_STEP_SUMMARY
+                  echo "- [Allure Results](${{ env.ARTIFACT_NAME_REMOTE }})" >> $GITHUB_STEP_SUMMARY
+                  echo "- [Appium Logs](appium-logs)" >> $GITHUB_STEP_SUMMARY
+                fi
