@@ -5,10 +5,10 @@ env:
     JAVA_DISTRIBUTION: 'temurin'
     
   
-    ANDROID_PROFILE: Nexus 6
+    ANDROID_PROFILE: pixel_6
     ANDROID_TARGET: google_apis
-    ANDROID_API_LEVEL: 28
-    ANDROID_ARCH: x86_64
+    ANDROID_API_LEVEL: 29
+    ANDROID_ARCH: arm64-v8a
   
     
     ARTIFACT_NAME_REMOTE: allure-results-android-remote
