@@ -2,7 +2,7 @@ name: QA Automation Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [qa-task]
   pull_request:
 
 jobs:
