@@ -138,18 +138,26 @@ jobs:
           disable-animations: true
           working-directory: ./mobile-testing
           script: |
-            # Cek apakah adb bisa melihat device
+            echo "Waiting for emulator to be fully booted..."
+          
+            adb wait-for-device
+          
+            # Tunggu sampai boot_completed = 1
+            boot_completed=""
+            until [[ "$boot_completed" == "1" ]]; do
+              sleep 5
+              boot_completed=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+              echo "Boot status: $boot_completed"
+            done
+          
+            echo "Emulator ready!"
+          
             adb devices
-            
-            echo "🚀 Waiting for emulator to be ready..."
-            # Kita tidak perlu wait-for-device manual karena action ini sudah melakukannya
-            # Tapi kita pastikan adb server berjalan
-            adb start-server
-            
-            echo "📲 Installing APK..."
+          
+            echo "Installing APK..."
             adb install ${{ env.APK_PATH }}
-            
-            echo "🧪 Running tests..."
+          
+            echo "Running WDIO..."
             npm run wdio
       
       - name: Upload Allure Results
