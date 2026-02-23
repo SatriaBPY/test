@@ -1,5 +1,22 @@
 name: QA Automation Pipeline
 
+env:
+    JAVA_VERSION: '17'
+    JAVA_DISTRIBUTION: 'temurin'
+    
+  
+    ANDROID_PROFILE: Nexus 6
+    ANDROID_TARGET: google_apis
+    ANDROID_API_LEVEL: 28
+    ANDROID_ARCH: x86_64
+  
+    
+    ARTIFACT_NAME_REMOTE: allure-results-android-remote
+    
+    
+    APK_URL: "https://github.com/webdriverio/native-demo-app/releases/download/v2.0.0/android.wdio.native.app.v2.0.0.apk"
+    APK_PATH: "./apk/android.wdio.native.app.v2.0.0.apk"
+
 on:
   push:
     branches: [main]
@@ -69,33 +86,8 @@ jobs:
   # ==================================
   # MOBILE - WDIO + EMULATOR
   # ==================================
-  name: Appium CICD Test
-  
-  on: [push, pull_request]
-  
-  env:
-    JAVA_VERSION: '17'
-    JAVA_DISTRIBUTION: 'temurin'
+  mobile-test: 
     
-  
-    ANDROID_PROFILE: Nexus 6
-    ANDROID_TARGET: google_apis
-    ANDROID_API_LEVEL: 28
-    ANDROID_ARCH: x86_64
-  
-    
-    ARTIFACT_NAME_REMOTE: allure-results-android-remote
-    
-    
-    APK_URL: "https://github.com/webdriverio/native-demo-app/releases/download/v2.0.0/android.wdio.native.app.v2.0.0.apk"
-    APK_PATH: "./apk/android.wdio.native.app.v2.0.0.apk"
-  
-  defaults:
-    run:
-      shell: bash
-  
-  jobs:
-    run-android-tests-remote:
       name: Run Android Tests on Emulator
       runs-on: ubuntu-latest
       outputs:
