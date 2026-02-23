@@ -70,66 +70,79 @@ jobs:
   # MOBILE - WDIO + EMULATOR
   # ==================================
   mobile-test:
-    name: Mobile Automation
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: ./mobile-testing
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - run: npm install
-
-      # Android SDK
-      - uses: android-actions/setup-android@v3
-
-      - name: Accept Licenses
-        run: yes | sdkmanager --licenses
-
-      - name: Install Android Image
-        run: |
-          sdkmanager "system-images;android-30;google_apis;x86_64"
-          sdkmanager "platform-tools"
-          sdkmanager "emulator"
-
-      - name: Create Emulator
-        run: |
-          echo "no" | avdmanager create avd \
-            -n test \
-            -k "system-images;android-30;google_apis;x86_64" \
-            --force
-
-      - name: Start Emulator
-        run: |
-          nohup emulator -avd test -no-window -no-audio -no-boot-anim &
-          adb wait-for-device
-          sleep 30
-
-      - name: Install Appium
-        run: npm install -g appium
-
-      - name: Install UiAutomator2 Driver
-        run: appium driver install uiautomator2
-
-      - name: Run WDIO Tests
-        run: npm run wdio
-
-      - name: Upload Mobile Allure
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobile-allure-results
-          path: mobile-testing/allure-results
-          if-no-files-found: ignore
-
-      - name: Upload Mobile Video
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobile-video
-          path: mobile-testing/reports/video
-          if-no-files-found: ignore
+      name: Mobile Automation
+      runs-on: ubuntu-latest
+  
+      defaults:
+        run:
+          working-directory: ./mobile-testing
+  
+      steps:
+        - uses: actions/checkout@v4
+  
+        - uses: actions/setup-node@v4
+          with:
+            node-version: 18
+  
+        - run: npm install
+  
+       
+        - name: Set up JDK 11
+          uses: actions/setup-java@v3
+          with:
+            distribution: 'zulu'
+            java-version: '11'
+  
+       
+        - name: Download APK
+          run: |
+            mkdir -p apk
+            curl -L -o ./apk/android.wdio.native.app.v2.0.0.apk \
+              "https://github.com/webdriverio/native-demo-app/releases/download/v2.0.0/android.wdio.native.app.v2.0.0.apk"
+  
+    
+        - name: Run tests on Emulator
+          uses: reactivecircus/android-emulator-runner@v2
+          with:
+            api-level: 30
+            arch: x86_64
+            profile: pixel_4
+            avd-name: test
+            emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -accel on
+            disable-animations: true
+            working-directory: ./mobile-testing
+            script: |
+              # Install global tools
+              npm install -g appium
+              
+              # Install driver
+              appium driver install uiautomator2
+              
+              # Start Appium
+              appium --log-level debug &
+              
+              # Tunggu Appium siap
+              sleep 10
+              
+              # Install APK ke emulator
+              adb install ./apk/android.wdio.native.app.v2.0.0.apk
+              
+              # Jalankan test
+              npm run wdio
+  
+       
+        - name: Upload Mobile Allure
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: mobile-allure-results
+            path: mobile-testing/allure-results
+            if-no-files-found: ignore
+  
+        - name: Upload Mobile Video
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: mobile-video
+            path: mobile-testing/reports/video
+            if-no-files-found: ignore
