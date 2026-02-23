@@ -7,7 +7,7 @@ env:
   
     ANDROID_PROFILE: pixel_6
     ANDROID_TARGET: google_apis
-    ANDROID_API_LEVEL: 29
+    ANDROID_API_LEVEL: 30
     ANDROID_ARCH: arm64-v8a
   
     
@@ -138,8 +138,9 @@ jobs:
           disable-animations: true
           working-directory: ./mobile-testing
           script: |
-            # 1. Install APK
-            adb install ${{ env.APK_PATH }}
+            # 1. Checking Adb
+            #adb install ${{ env.APK_PATH }}
+            adb devices
             
             # 2. Start Appium (sudah terinstall di step sebelumnya)
             echo "🚀 Starting Appium server..."
