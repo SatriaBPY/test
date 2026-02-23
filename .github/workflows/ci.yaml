@@ -88,7 +88,7 @@ jobs:
   # ==================================
   mobile-test:
     name: Run Android Tests on Emulator
-    runs-on: macos-latest 
+    runs-on: macos-13
     outputs:
       test_status: ${{ steps.run_tests.outcome }}
   
