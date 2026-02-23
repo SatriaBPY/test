@@ -86,139 +86,85 @@ jobs:
   # ==================================
   # MOBILE - WDIO + EMULATOR
   # ==================================
-  mobile-test: 
-          name: Run Android Tests on Emulator
-          runs-on: ubuntu-latest
-          outputs:
-            test_status: ${{ steps.run_tests.outcome }}
-      
-          steps:
+  mobile-test:
+    name: Run Android Tests on Emulator
+    runs-on: macos-latest 
+    outputs:
+      test_status: ${{ steps.run_tests.outcome }}
+  
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+  
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+  
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ./mobile-testing/package-lock.json
+  
+      - name: Install dependencies
+        working-directory: ./mobile-testing
+        run: |
+          npm ci
+          npm install -g appium@next
+  
+      - name: Setup Appium drivers
+        working-directory: ./mobile-testing
+        run: |
+          appium driver install uiautomator2
+  
+      - name: Download APK
+        working-directory: ./mobile-testing
+        run: |
+          mkdir -p apk
+          curl -L -o ${{ env.APK_PATH }} ${{ env.APK_URL }}
+  
+      - name: Run tests on Android emulator
+        id: run_tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          target: ${{ env.ANDROID_TARGET }}
+          arch: ${{ env.ANDROID_ARCH }}
+          profile: ${{ env.ANDROID_PROFILE }}
+          emulator-options: -no-snapshot -no-audio -no-window -gpu swiftshader_indirect
+          disable-animations: true
+          working-directory: ./mobile-testing
+          script: |
+            # 1. Install APK
+            adb install ${{ env.APK_PATH }}
             
-            - name: Enable KVM
-              run: |
-                echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-                sudo udevadm control --reload-rules
-                sudo udevadm trigger --name-match=kvm
-      
+            # 2. Start Appium (sudah terinstall di step sebelumnya)
+            echo "🚀 Starting Appium server..."
+            nohup appium --log-level debug --log appium.log & 
             
-            - name: Checkout project
-              uses: actions/checkout@v4
-      
+            # 3. Tunggu Appium siap
+            sleep 15
             
-            - name: Set up JDK 17
-              uses: actions/setup-java@v3
-              with:
-                distribution: 'temurin'
-                java-version: '17'
-                
+            # 4. Run Test
+            echo "🧪 Running WebdriverIO tests..."
+            npm run wdio
       
-            
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                node-version: '18'
-                cache: 'npm'
-                cache-dependency-path: ./mobile-testing/package-lock.json
-      
-            
-            - name: Install dependencies
-              working-directory: ./mobile-testing
-              run: |
-                npm ci
-                npm install -g appium@next
-      
-            
-            - name: Download APK
-              working-directory: ./mobile-testing
-              run: |
-                mkdir -p apk
-                echo "📥 Downloading APK from ${{ env.APK_URL }}"
-                curl -L -o ${{ env.APK_PATH }} ${{ env.APK_URL }}
-                echo "✅ APK downloaded to ${{ env.APK_PATH }}"
-                ls -la apk/
-      
-            
-            - name: Setup Appium drivers
-              working-directory: ./mobile-testing
-              run: |
-                appium driver install uiautomator2
-                appium driver list --installed
-      
-            
-            - name: Build TypeScript
-              working-directory: ./mobile-testing
-              run: npm run build || echo "No build script, skipping"
-      
-            
-            - name: Run tests on Android emulator
-              id: run_tests
-              uses: reactivecircus/android-emulator-runner@v2
-              with:
-                api-level: ${{ env.ANDROID_API_LEVEL }}
-                target: ${{ env.ANDROID_TARGET }}
-                arch: ${{ env.ANDROID_ARCH }}
-                profile: ${{ env.ANDROID_PROFILE }}
-                emulator-options: -no-snapshot -no-audio -no-window -gpu swiftshader_indirect -no-accel
-                disable-animations: true
-                working-directory: ./mobile-testing
-                script: |
-                  echo "🚀 Emulator is starting..."
-                  
-                  # Tunggu emulator boot
-                  adb wait-for-device
-                  adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
-                  echo "✅ Emulator boot completed"
-                  
-                  # Disable animations
-                  adb shell settings put global window_animation_scale 0
-                  adb shell settings put global transition_animation_scale 0
-                  adb shell settings put global animator_duration_scale 0
-                  
-                  # Install APK
-                  echo "📲 Installing APK..."
-                  adb install ${{ env.APK_PATH }}
-                  echo "✅ APK installed"
-                  
-                  # Verifikasi APK
-                  adb shell pm list packages | grep wdio
-                  
-                  # Start Appium
-                  echo "🚀 Starting Appium server..."
-                  npx appium --log-level debug --log appium.log &
-                  sleep 10
-                  
-                  
-                  echo "🧪 Running WebdriverIO tests..."
-                  npm run wdio || true
-                  
-                  # Matikan emulator
-                  adb emu kill || true
-                  echo "✅ Emulator stopped"
-      
-            
-            - name: Upload Appium logs
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                name: appium-logs
-                path: ./mobile-testing/appium.log
-                if-no-files-found: ignore
-      
-            
-            - name: Upload Allure Results
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                name: ${{ env.ARTIFACT_NAME_REMOTE }}
-                path: |
+      - name: Upload Allure Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+              name: ${{ env.ARTIFACT_NAME_REMOTE }}
+              path: |
                   ./mobile-testing/allure-results
                   ./mobile-testing/test-results
-                if-no-files-found: ignore
+              if-no-files-found: ignore
       
-            
-            - name: Test Status Summary
-              if: always()
-              run: |
+      - name: Test Status Summary
+        if: always()
+        run: |
                 echo "## 📱 Android Test Results" >> $GITHUB_STEP_SUMMARY
                 echo "" >> $GITHUB_STEP_SUMMARY
                 
