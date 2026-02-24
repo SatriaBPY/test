@@ -1,0 +1,187 @@
+name: QA Automation Pipeline
+
+env:
+    JAVA_VERSION: '17'
+    JAVA_DISTRIBUTION: 'temurin'
+    
+  
+    ANDROID_PROFILE: pixel_6
+    ANDROID_TARGET: google_apis
+    ANDROID_API_LEVEL: 30
+    ANDROID_ARCH: arm64-v8a
+  
+    
+    ARTIFACT_NAME_REMOTE: allure-results-android-remote
+    
+    
+    APK_URL: "https://github.com/webdriverio/native-demo-app/releases/download/v2.0.0/android.wdio.native.app.v2.0.0.apk"
+    APK_PATH: "./apk/android.wdio.native.app.v2.0.0.apk"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # ==================================
+  # WEB - Playwright
+  # ==================================
+  web-test:
+    name: Web Automation
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./web-testing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: npm install
+      - run: npx playwright install --with-deps
+      - run: npm run test
+
+      - name: Upload Web Allure Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-allure-results
+          path: web-testing/allure-results
+          if-no-files-found: ignore
+
+  # ==================================
+  # API - Newman
+  # ==================================
+  api-test:
+    name: API Automation
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./api-testing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: npm install
+        
+      - name: Run API Test
+        continue-on-error: true
+        run: npm run start
+
+      - name: Upload API Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-html-report
+          path: api-testing/reporter
+          if-no-files-found: ignore
+
+  # ==================================
+  # MOBILE - WDIO + EMULATOR
+  # ==================================
+  mobile-test:
+    name: Run Android Tests on Emulator
+    runs-on: macos-15-intel
+    outputs:
+      test_status: ${{ steps.run_tests.outcome }}
+  
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+  
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+  
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: ./mobile-testing/package-lock.json
+  
+      - name: Install dependencies
+        working-directory: ./mobile-testing
+        run: |
+          npm ci
+          npm install -g appium@next
+  
+      - name: Setup Appium drivers
+        working-directory: ./mobile-testing
+        run: |
+          appium driver install uiautomator2
+  
+      - name: Download APK
+        working-directory: ./mobile-testing
+        run: |
+          mkdir -p apk
+          curl -L -o ${{ env.APK_PATH }} ${{ env.APK_URL }}
+  
+      - name: Run tests on Android emulator
+        id: run_tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 31
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu host -no-snapshot -no-audio -no-boot-anim
+          disable-animations: true
+          working-directory: ./mobile-testing
+          script: |
+            echo "Waiting for emulator to be fully booted..."
+          
+            adb wait-for-device
+          
+            # Tunggu sampai boot_completed = 1
+            boot_completed=""
+            until [[ "$boot_completed" == "1" ]]; do
+              sleep 5
+              boot_completed=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+              echo "Boot status: $boot_completed"
+            done
+          
+            echo "Emulator ready!"
+          
+            adb devices
+          
+            echo "Installing APK..."
+            adb install ${{ env.APK_PATH }}
+          
+            echo "Running WDIO..."
+            npm run wdio
+      
+      - name: Upload Allure Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+              name: ${{ env.ARTIFACT_NAME_REMOTE }}
+              path: |
+                  ./mobile-testing/allure-results
+                  ./mobile-testing/test-results
+              if-no-files-found: ignore
+      
+      - name: Test Status Summary
+        if: always()
+        run: |
+                echo "## 📱 Android Test Results" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                
+                if [[ "${{ steps.run_tests.outcome }}" == "success" ]]; then
+                  echo "✅ **All tests passed!**" >> $GITHUB_STEP_SUMMARY
+                else
+                  echo "⚠️ **Some tests failed**" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "📊 Check the artifacts:" >> $GITHUB_STEP_SUMMARY
+                  echo "- [Allure Results](${{ env.ARTIFACT_NAME_REMOTE }})" >> $GITHUB_STEP_SUMMARY
+                  echo "- [Appium Logs](appium-logs)" >> $GITHUB_STEP_SUMMARY
+                fi

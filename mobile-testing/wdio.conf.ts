@@ -31,10 +31,10 @@ export const config: WebdriverIO.Config = {
       "appium:app": path.join(process.cwd(), "./apk/android.wdio.native.app.v2.0.0.apk"),
       "appium:appPackage": "com.wdiodemoapp",
       "appium:appActivity": "com.wdiodemoapp.MainActivity",
-      "appium:noReset": false,
+      "appium:noReset": true,
       "appium:newCommandTimeout": 3600,
       "appium:connectHardwareKeyboard": true,
-      "appium:deviceName": "Google API Emulator",
+      "appium:deviceName": "emulator-5554",
     },
   ],
 

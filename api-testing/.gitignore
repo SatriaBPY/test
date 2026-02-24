@@ -8,3 +8,4 @@ node_modules/
 /playwright/.auth/
 allure-results/
 /videos
+reporter/report.html
